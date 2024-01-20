@@ -1,5 +1,3 @@
-from locale import normalize
-from turtle import shape
 import numpy as np
 import pandas as pd
 
@@ -11,7 +9,18 @@ dic = {}
 for i in range(9742):
     dic[i] = movies_df['movieId'][i]
 
-df = np.loadtxt("S.txt")
+#create 610*9742 matrix that rows are users and columns are movies
+   
+# movie_id_2= np.ndarray( shape=(len(ratings_df.movieId)) , dtype=np.int32)
+# for i in range(len(ratings_df.movieId)):
+#     movie_id_2[i] = dic[int(ratings_df.movieId[i])]   
+# movie_id= np.ndarray( shape=(610,9742) , dtype=np.int32)
+# for j in range(610):
+#     for i in range(len(ratings_df.userId)):
+#         if ratings_df.userId[i] == j+1 :
+#             movie_id[j][movie_id_2[i]] = ratings_df.rating[i]
+#####################################################################
+df = np.loadtxt("data.txt") # read 610*9742 matrix that rows are users and columns are movies that already created
 
 
 normalized_df = df - np.asarray([(np.mean(df, 1))]).T
@@ -32,8 +41,7 @@ def power_iteration(matrix, num_iterations):
     return eigenvalue, vector
 
 
-def eigen_decomposition(A,d=9742 ,num_iterations=10):
-    # n = len(A)
+def eigen_decomposition(A, d=9742 ,num_iterations=10):
     n = 50
     eigenvalues = np.zeros(n)
     eigenvectors = np.zeros((d, d))
@@ -51,14 +59,14 @@ def eigen_decomposition(A,d=9742 ,num_iterations=10):
     return eigenvalues, eigenvectors
 
 
-def svd(matrix_2 ,A, eigenvalues , eigen_vector):
+def svd(A , eigenvalues , eigen_vector):
 
     sorted_indices = np.argsort(eigenvalues)[::-1]
     eigenvalues = eigenvalues[sorted_indices]
     eigen_vector = eigen_vector[:, sorted_indices]
 
-    matrix = np.dot(matrix_2,matrix_2.T)
-    eigenvalues_M , U = eigen_decomposition(matrix , d=610,num_iterations=500)
+    matrix_AAT = np.dot(A,A.T) # AAT matrix
+    eigenvalues_M , U = eigen_decomposition(matrix_AAT , d=610,num_iterations=500)
     sorted_indices = np.argsort(eigenvalues_M)[::-1]
     U = U[:, sorted_indices]
 
@@ -69,31 +77,13 @@ def svd(matrix_2 ,A, eigenvalues , eigen_vector):
     singular_values = np.array(singular_list)
 
     num_positive_singular = len(singular_values)
-
-    # U = np.dot(A, eigen_vector[:, :num_positive_singular])
-    
-    # U /= singular_values 
-
-
-    # sorted_indices = np.argsort(eigenvalues_M)[::-1]
     
     Sigma = singular_values
     
     return U[: , :num_positive_singular], Sigma, eigen_vector[:, :num_positive_singular].T
 
 
-def top_cosine_similarity(U, data, user_id, top_n=10):
-    index = user_id - 1 
-    user_row = U[index, :]
-    mag_user_row = np.linalg.norm(user_row)
-    magnitude = np.sqrt(np.einsum('ij, ij -> i', data, data))
-    similarity = np.dot(user_row, data.T) / (mag_user_row * magnitude)
-    sort_indexes = np.argsort(-similarity)
-    print(similarity.shape)
-    print(sort_indexes , sort_indexes.max())
-    return sort_indexes[:top_n]
-
-def top_cosine_similarity2(U, V, user_id, top_n=10):
+def top_cosine_similarity(U, V, user_id, top_n=10):
     user_index = user_id - 1
     user_row = U[user_index, :]
 
@@ -128,7 +118,7 @@ print()
 print("Eigenvector:\n", eigenvectors)
 print('\n\n')
 
-U, Sigma, Vt = svd(normalized_df,matrix, eigenvalues, eigenvectors)
+U, Sigma, Vt = svd(normalized_df, eigenvalues, eigenvectors)
 
 
 
@@ -147,32 +137,8 @@ user_id = 156
 top_n = 50
 
 sliced_V = Vt.T[:, :k] 
-print(sliced_V.shape)
-indexes = top_cosine_similarity2(U, sliced_V, user_id, top_n)
-print(U.shape[0])
-print(U.shape[1])
-col = U.shape[1]
-for i in indexes:
-    if df[user_id , i] == 0:
-        print(movies_df[movies_df["movieId"] == dic[i]].title.values[0])
-print("___________________________________________________________________________")
-k = 50
-user_id = 156
-top_n = 50
-U, Sigma, Vt = np.linalg.svd(normalized_df)
-print("___________________________________________________________________________")
-print("U:\n", U[: , :50])
-print()
-print("___________________________________________________________________________")
-print("Sigma:\n", Sigma) 
-print()
-print("___________________________________________________________________________")
-print("Vt:\n", Vt)
-print("___________________________________________________________________________")
-sliced_V = Vt.T[:, :k] 
-indexes = top_cosine_similarity2(U[: , :50], sliced_V, user_id, top_n)
+indexes = top_cosine_similarity(U, sliced_V, user_id, top_n)
 
-row = df[156 , :]
 for i in indexes:
     if df[user_id , i] == 0:
         print(movies_df[movies_df["movieId"] == dic[i]].title.values[0])
