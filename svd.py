@@ -19,7 +19,7 @@ for i in range(9742):
 #     for i in range(len(ratings_df.userId)):
 #         if ratings_df.userId[i] == j+1 :
 #             movie_id[j][movie_id_2[i]] = ratings_df.rating[i]
-# np.savetxt('myarray.txt', movie_id)
+# np.savetxt('data.txt', movie_id)
 #####################################################################
 df = np.loadtxt("data.txt") # read 610*9742 matrix that rows are users and columns are movies that already created
 
